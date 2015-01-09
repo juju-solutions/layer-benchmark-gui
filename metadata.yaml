@@ -1,0 +1,12 @@
+name: benchmark-gui
+summary: Graphical User Interface and metric collection service
+maintainer: Marco Ceppi <marco@ceppi.net>
+description: |
+  Graphical User Interface and metric collection service
+tags:
+  - misc
+provides:
+  collector:
+    interface: cabs-metrics
+  website:
+    interface: http
