@@ -1,0 +1,58 @@
+import os
+import sys
+import shutil
+
+sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
+
+from charmhelpers.core import (
+    hookenv,
+    host,
+)
+
+from charmhelpers import (
+    fetch,
+)
+
+from helpers import (
+    apache2,
+)
+
+def install():
+    hookenv.log('Installing benchmark-guii')
+    fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
+                                                       'graphite-web',
+                                                       'apache2',
+                                                       'apache2-mpm-worker',
+                                                       'libapache2-mod-wsgi']))
+    shutil.copyfile('files/graphite.conf',
+                    '/etc/apache2/sites-available/cabs-graphite.conf')
+    shutil.copyfile('files/graphite-carbon', '/etc/default/graphite-carbon')
+    apache2.enable_site('cabs-graphite')
+
+    host.chownr('/var/lib/graphite', '_graphite', '_graphite')
+    subprocess.check_call('sudo -u _graphite graphite-manage syncdb --noinput',
+                          shell=True)
+
+    host.service_restart('apache2')
+    host.service_restart('carbon-cache')
+
+
+def configure():
+    pass
+
+
+def emitter_rel():
+    if hookenv.in_relation_hook():
+        hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003)
+
+
+def start():
+    host.service_reload('apache2')
+
+
+def stop():
+    apache2.disable_site('cabs-graphite')
+    os.remove('/etc/apache2/sites-available/cabs-graphite.conf')
+    host.service_reload('apache2')
+    host.service_stop('carbon-cache')
+
