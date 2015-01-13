@@ -14,6 +14,8 @@ def enable_site(site):
     src = os.path.join(APACHE2_SITES_AVAIL, site)
     dst = os.path.join(APACHE2_SITES_ENABLED, site)
     if os.path.exists(dst):
-        raise IOError('%s already exists' % dst)
+        if not os.path.realpath(dst) == src:
+            raise IOError('%s already exists, but is not %s' % (dst, src))
+        return
 
     return os.symlink(src, dst)
