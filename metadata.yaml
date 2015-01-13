@@ -5,8 +5,9 @@ description: |
   Graphical User Interface and metric collection service
 tags:
   - misc
-provides:
+requires:
   collector:
     interface: cabs-metrics
+provides:
   website:
     interface: http
