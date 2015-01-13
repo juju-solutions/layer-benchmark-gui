@@ -37,8 +37,8 @@ def install():
     host.service_restart('carbon-cache')
 
     # Install cron, vhost for gui, etc
-    hostenv.open_port(9000)
-    hostenv.open_port(2003)
+    hookenv.open_port(9000)
+    hookenv.open_port(2003)
 
 
 def configure():
