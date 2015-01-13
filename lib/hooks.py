@@ -10,14 +10,8 @@ from charmhelpers.core import (
     host,
 )
 
-from charmhelpers import (
-    fetch,
-)
-
-from helpers import (
-    apache2,
-)
-
+from charmhelpers import fetch
+from helpers import apache2
 from helpers.host import touch
 
 
