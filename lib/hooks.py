@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import subprocess
 
 sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
 
@@ -17,13 +18,18 @@ from helpers import (
     apache2,
 )
 
+from helpers.host import touch
+
+
 def install():
     hookenv.log('Installing benchmark-guii')
+    fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
                                                        'graphite-web',
                                                        'apache2',
                                                        'apache2-mpm-worker',
                                                        'libapache2-mod-wsgi']))
+    touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
                     '/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite-carbon', '/etc/default/graphite-carbon')
@@ -35,6 +41,10 @@ def install():
 
     host.service_restart('apache2')
     host.service_restart('carbon-cache')
+
+    # Install cron, vhost for gui, etc
+    hostenv.open_port(9000)
+    hostenv.open_port(2003)
 
 
 def configure():
