@@ -1,3 +1,4 @@
+import re
 import os
 import sys
 import shutil
@@ -42,7 +43,13 @@ def install():
 
 
 def configure():
-    pass
+    with open('/etc/graphite/local_settings.py', 'r') as f:
+        contents = f.read()
+
+    new_contents = re.sub(r'#TIME_ZONE = .*', "TIME_ZONE = 'Etc/UTC'", contents)
+
+    with open('/etc/graphite/local_settings.py', 'w') as f:
+        f.write(new_contents)
 
 
 def emitter_rel():
