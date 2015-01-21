@@ -1,8 +1,10 @@
 import os
 
+
 APACHE2_CONF_DIR = '/etc/apache2'
 APACHE2_SITES_AVAIL = os.path.join(APACHE2_CONF_DIR, 'sites-available')
 APACHE2_SITES_ENABLED = os.path.join(APACHE2_CONF_DIR, 'sites-enabled')
+
 
 def enable_site(site):
     if not os.path.isfile(os.path.join(APACHE2_SITES_AVAIL, site)):
@@ -19,3 +21,14 @@ def enable_site(site):
         return
 
     return os.symlink(src, dst)
+
+
+def disable_site(site):
+    if not os.path.isfile(os.path.join(APACHE2_SITES_ENABLED, site)):
+        if os.path.isfile(os.path.join(APACHE2_SITES_ENABLED, '%s.conf' % site)):
+            site = '%s.conf' % site
+        else:
+            raise IOError('%s is not enabled' % site)
+    site_path = os.path.join(APACHE2_SITES_ENABLED, site)
+
+    return os.unlink(site_path)
