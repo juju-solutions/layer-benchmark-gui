@@ -7,7 +7,3 @@ options:
     default:
     type: "string"
     description: "Juju Secret for API User"
-  local-env:
-    default: false
-    type: boolean
-    description: "Is this running in a local juju environment"

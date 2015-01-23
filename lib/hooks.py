@@ -97,11 +97,12 @@ def configure(force=False):
     if 'juju-secret' not in config:
         return
 
-    if config.changed('juju-user') or config.changed('juju-secret') or config.changed('local-env') or force:
+    if config.changed('juju-user') or config.changed('juju-secret') or force:
+        api_addresses = os.getenv('JUJU_API_ADDRESSES')
+        if api_addresses is not None:
+            juju_api = 'wss://%s' % api_addresses.split()[0]
+
         graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
-        juju_api = 'wss://localhost:17070'
-        if config['local-env']:
-            juju_api = 'wss://10.0.3.1:17070'
 
         with open('/opt/collector-web/production.ini', 'r+') as f:
             ini = f.read()
