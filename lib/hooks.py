@@ -23,7 +23,9 @@ def install():
                                                        'graphite-web',
                                                        'apache2',
                                                        'apache2-mpm-worker',
-                                                       'libapache2-mod-wsgi']))
+                                                       'libapache2-mod-wsgi',
+                                                       'python-virtualenv',
+                                                       'redis-server']))
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
                     '/etc/apache2/sites-available/cabs-graphite.conf')
