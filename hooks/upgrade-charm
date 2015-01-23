@@ -2,10 +2,13 @@
 
 import os
 import sys
+import shutil
 
 sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
 
 from hooks import install, configure, start
+
+shutil.rmtree('/opt/collector-web')
 
 install()
 configure()
