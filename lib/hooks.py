@@ -98,6 +98,7 @@ def configure(force=False):
         return
 
     if config.changed('juju-user') or config.changed('juju-secret') or config.changed('local-env') or force:
+        graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
         juju_api = 'wss://localhost:17070'
         if config['local-env']:
             juju_api = 'wss://10.0.3.1:17070'
@@ -110,6 +111,9 @@ def configure(force=False):
                          'juju.api.secret = %s' % config['juju-secret'], ini)
             ini = re.sub(r'juju.api.endpoint = .*',
                          'juju.api.endpoint = %s' % juju_api, ini)
+            ini = re.sub(r'graphite.url = .*',
+                         'graphite.url = %s' % graphite_url, ini)
+
             f.seek(0, 0)
             f.truncate()
             f.write(ini)
