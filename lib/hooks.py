@@ -39,6 +39,7 @@ def install():
 
     # Install cron, vhost for gui, etc
     hookenv.open_port(9000)
+    hookenv.open_port(9001)
     hookenv.open_port(2003)
 
 
