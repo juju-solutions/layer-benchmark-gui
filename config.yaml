@@ -6,4 +6,4 @@ options:
   juju-secret:
     default:
     type: "string"
-    descrption: "Juju Secret for API User"
+    description: "Juju Secret for API User"
