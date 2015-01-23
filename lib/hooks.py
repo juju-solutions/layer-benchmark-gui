@@ -68,4 +68,3 @@ def stop():
     os.remove('/etc/apache2/sites-available/cabs-graphite.conf')
     host.service_reload('apache2')
     host.service_stop('carbon-cache')
-
