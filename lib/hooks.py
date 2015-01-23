@@ -43,12 +43,11 @@ def install():
 
 
 def configure():
-    with open('/etc/graphite/local_settings.py', 'r') as f:
+    with open('/etc/graphite/local_settings.py', 'r+') as f:
         contents = f.read()
-
-    new_contents = re.sub(r'#TIME_ZONE = .*', "TIME_ZONE = 'Etc/UTC'", contents)
-
-    with open('/etc/graphite/local_settings.py', 'w') as f:
+        contents = re.sub(r'#TIME_ZONE = .*', "TIME_ZONE = 'Etc/UTC'",
+                          contents)
+        f.seek(0, 0)
         f.write(new_contents)
 
 
