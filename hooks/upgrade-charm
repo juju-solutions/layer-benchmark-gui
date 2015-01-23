@@ -11,5 +11,5 @@ from hooks import install, configure, start
 shutil.rmtree('/opt/collector-web')
 
 install()
-configure()
+configure(True)
 start()

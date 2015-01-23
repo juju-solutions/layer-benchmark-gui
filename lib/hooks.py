@@ -83,7 +83,7 @@ def install():
     hookenv.open_port(2003)
 
 
-def configure():
+def configure(force=False):
     with open('/etc/graphite/local_settings.py', 'r+') as f:
         contents = f.read()
         contents = re.sub(r'#TIME_ZONE = .*', "TIME_ZONE = 'Etc/UTC'",
