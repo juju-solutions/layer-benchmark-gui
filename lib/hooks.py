@@ -16,6 +16,8 @@ from helpers import apache2
 from helpers.host import touch, extract_tar
 
 
+config = hookenv.config()
+
 def install():
     hookenv.log('Installing benchmark-guii')
     fetch.apt_update()
@@ -88,6 +90,16 @@ def configure():
                           contents)
         f.seek(0, 0)
         f.write(new_contents)
+
+    if config.changed('juju-user') or config.changed('juju-secret'):
+        with open('/opt/collector-web/production.ini', 'r+') as f:
+            ini = f.read()
+            ini = re.sub(r'juju.api.user = .*',
+                         'juju.api.user = %s' % config['juju-user'], ini)
+            ini = re.sub(r'juju.api.secret = .*',
+                         'juju.api.secret = %s' % config['juju-secret'], ini)
+            f.seek(0, 0)
+            f.write(ini)
 
 
 def emitter_rel():

@@ -1,0 +1,9 @@
+options:
+  juju-user:
+    default: "user-admin"
+    type: "string"
+    description: "Juju API User"
+  juju-secret:
+    default:
+    type: "string"
+    descrption: "Juju Secret for API User"
