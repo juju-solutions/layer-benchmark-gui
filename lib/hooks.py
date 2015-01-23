@@ -13,7 +13,7 @@ from charmhelpers.core import (
 
 from charmhelpers import fetch
 from helpers import apache2
-from helpers.host import touch
+from helpers.host import touch, extract_tar
 
 
 def install():
@@ -35,6 +35,42 @@ def install():
     host.chownr('/var/lib/graphite', '_graphite', '_graphite')
     subprocess.check_call('sudo -u _graphite graphite-manage syncdb --noinput',
                           shell=True)
+
+    extract_tar('payload/collector-web.tar.gz', '/opt/collector-web')
+    subprocess.check_call(['make', '.venv'], cwd='/opt/collector-web')
+
+    extract_tar('payload/collector-worker.tar.gz', '/opt/collector-worker')
+    subprocess.check_call(['make', '.venv'], cwd='/opt/collector-worker')
+
+    with open('/opt/collector-web/conf/apache/app.conf', 'r+') as f:
+        conf = f.read()
+
+        conf = "Listen 9000" + '\n' + conf
+        conf = conf.replace('<VirtualHost *:80>', '<VirtualHost *:9000>', conf)
+        conf = conf.replace('/path/to/app/venv/dir',
+                            '/opt/collector-web/.venv', conf)
+        conf = conf.replace('/path/to/dir/containing/wsgi/file',
+                            '/opt/collector-web/conf/apache', conf)
+
+        with open('/etc/apache2/sites-available/cabs-collector-web.conf',
+                  'w') as a:
+            a.write(conf)
+
+    with open('/opt/collector-web/conf/apache/app.wsgi', 'r+') as f:
+        conf = f.read()
+
+        conf = conf.replace("ini_path = '/path/to/myapp/production.ini'",
+                            "ini_path = '/opt/collector-web/production.ini'")
+        conf = conf.replace('<VirtualHost *:80>', '<VirtualHost *:9000>', conf)
+        conf = conf.replace('/path/to/app/venv/dir',
+                            '/opt/collector-web/.venv', conf)
+        conf = conf.replace('/path/to/dir/containing/wsgi/file',
+                            '/opt/collector-web/conf/apache', conf)
+        f.seek(0, 0)
+        f.write(conf)
+
+    host.chownr('/opt/collector-web', 'ubuntu', 'ubuntu')
+    apache2.enable_site('cabs-collector-web')
 
     host.service_restart('apache2')
     host.service_restart('carbon-cache')
