@@ -90,6 +90,9 @@ def configure(force=False):
                           contents)
         f.seek(0, 0)
         f.write(new_contents)
+        juju_api = 'wss://localhost:17070'
+        if config['local-env']:
+            juju_api = 'wss://10.0.3.1:17070'
 
     if config.changed('juju-user') or config.changed('juju-secret'):
         with open('/opt/collector-web/production.ini', 'r+') as f:
@@ -98,6 +101,8 @@ def configure(force=False):
                          'juju.api.user = %s' % config['juju-user'], ini)
             ini = re.sub(r'juju.api.secret = .*',
                          'juju.api.secret = %s' % config['juju-secret'], ini)
+            ini = re.sub(r'juju.api.endpoint = .*',
+                         'juju.api.endpoint = %s' % juju_api, ini)
             f.seek(0, 0)
             f.write(ini)
 
