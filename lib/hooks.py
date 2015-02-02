@@ -27,6 +27,7 @@ def install():
                                                        'apache2-mpm-worker',
                                                        'libapache2-mod-wsgi',
                                                        'python-virtualenv',
+                                                       'python-dev',
                                                        'redis-server']))
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
@@ -94,6 +95,21 @@ def configure(force=False):
         f.truncate()
         f.write(contents)
 
+    if config.changed('debug'):
+        if not config.get('debug', False):
+            address = '127.0.0.1'
+        else:
+            address = '0.0.0.0'
+
+        with open('/etc/redis/redis.conf', 'r+') as f:
+            cfg = f.read()
+            cfg = re.sub(r'bind .*', 'bind %s' % address, cfg)
+            f.seek(0, 0)
+            f.truncate()
+            f.write(cfg)
+
+        host.service_restart('redis-server')
+
     if 'juju-secret' not in config:
         return
 
@@ -124,7 +140,8 @@ def configure(force=False):
 
 def emitter_rel():
     if hookenv.in_relation_hook():
-        hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003)
+        hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003,
+                             api_port=9000)
 
 
 def start():
