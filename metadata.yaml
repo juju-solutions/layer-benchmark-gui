@@ -11,3 +11,5 @@ requires:
 provides:
   website:
     interface: http
+  benchmark:
+    interface: benchmark

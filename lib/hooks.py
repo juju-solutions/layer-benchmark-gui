@@ -18,6 +18,7 @@ from helpers.host import touch, extract_tar
 
 config = hookenv.config()
 
+
 def install():
     hookenv.log('Installing benchmark-guii')
     fetch.apt_update()
@@ -136,6 +137,21 @@ def configure(force=False):
             f.write(ini)
 
         host.service_restart('apache2')
+
+
+def benchmark():
+    hookenv.log('benchmark called!')
+    if hookenv.in_relation_hook():
+        hookenv.log('holding hands')
+
+        actions = hookenv.relation_get('actions')
+        if actions:
+            hookenv.log('actions received: %s' % actions)
+        graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
+
+        hookenv.relation_set(hostname=hookenv.unit_private_ip(),
+                             port=2003, graphite_port=9001,
+                             graphite_endpoint=graphite_url, api_port=9000)
 
 
 def emitter_rel():
