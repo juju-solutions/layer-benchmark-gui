@@ -20,7 +20,7 @@ config = hookenv.config()
 
 
 def install():
-    hookenv.log('Installing benchmark-guii')
+    hookenv.log('Installing benchmark-gui')
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
                                                        'graphite-web',
@@ -140,13 +140,11 @@ def configure(force=False):
 
 
 def benchmark():
-    hookenv.log('benchmark called!')
     if hookenv.in_relation_hook():
-        hookenv.log('holding hands')
+        benchmarks = hookenv.relation_get('benchmarks')
+        if benchmarks:
+            hookenv.log('benchmarks received: %s' % benchmarks)
 
-        actions = hookenv.relation_get('actions')
-        if actions:
-            hookenv.log('actions received: %s' % actions)
         graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
 
         hookenv.relation_set(hostname=hookenv.unit_private_ip(),
