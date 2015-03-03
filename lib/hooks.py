@@ -18,8 +18,9 @@ from helpers.host import touch, extract_tar
 
 config = hookenv.config()
 
+
 def install():
-    hookenv.log('Installing benchmark-guii')
+    hookenv.log('Installing benchmark-gui')
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
                                                        'graphite-web',
@@ -28,7 +29,9 @@ def install():
                                                        'libapache2-mod-wsgi',
                                                        'python-virtualenv',
                                                        'python-dev',
-                                                       'redis-server']))
+                                                       'redis-server',
+                                                       'python-requests',
+                                                      ]))
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
                     '/etc/apache2/sites-available/cabs-graphite.conf')
@@ -136,6 +139,26 @@ def configure(force=False):
             f.write(ini)
 
         host.service_restart('apache2')
+
+
+def benchmark():
+    if hookenv.in_relation_hook():
+        import json
+        import requests
+        benchmarks = hookenv.relation_get('benchmarks')
+        if benchmarks:
+            hookenv.log('benchmarks received: %s' % benchmarks)
+            service = hookenv.remote_unit().split('/')[0]
+            payload = {'benchmarks': [b for b in benchmarks.split(',')]}
+            r = requests.post('http://localhost:9000/api/services/%s' % service,
+                              data=json.dumps(payload),
+                              headers={'content-type': 'application/json'})
+
+        graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
+
+        hookenv.relation_set(hostname=hookenv.unit_private_ip(),
+                             port=2003, graphite_port=9001,
+                             graphite_endpoint=graphite_url, api_port=9000)
 
 
 def emitter_rel():
