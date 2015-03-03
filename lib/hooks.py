@@ -29,7 +29,9 @@ def install():
                                                        'libapache2-mod-wsgi',
                                                        'python-virtualenv',
                                                        'python-dev',
-                                                       'redis-server']))
+                                                       'redis-server',
+                                                       'python-requests',
+                                                      ]))
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
                     '/etc/apache2/sites-available/cabs-graphite.conf')
@@ -141,9 +143,16 @@ def configure(force=False):
 
 def benchmark():
     if hookenv.in_relation_hook():
+        import json
+        import requests
         benchmarks = hookenv.relation_get('benchmarks')
         if benchmarks:
             hookenv.log('benchmarks received: %s' % benchmarks)
+            service = hookenv.remote_unit().split('/')[0]
+            payload = {'benchmarks': [b for b in benchmarks.split(',')]}
+            r = requests.post('http://localhost:9000/api/services/%s' % service,
+                              data=json.dumps(payload),
+                              headers={'content-type': 'application/json'})
 
         graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
 
