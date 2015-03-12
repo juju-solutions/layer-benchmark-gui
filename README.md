@@ -29,5 +29,5 @@ To collect performance metrics about the system(s) being benchmarked, you'll nee
 
     juju deploy collectd
     juju add-relation collectd:collector benchmark-gui:collector
-    juju add-relation collectd:juju-info mediawiki:juju-info
-    juju add-relation collectd:juju-info mysql:juju-info
+    juju add-relation collectd mediawiki
+    juju add-relation collectd mysql
