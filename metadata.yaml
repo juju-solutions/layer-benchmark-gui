@@ -11,8 +11,8 @@ tags:
 requires:
   collector:
     interface: cabs-metrics
+  benchmark:
+    interface: benchmark
 provides:
   website:
     interface: http
-  benchmark:
-    interface: benchmark
