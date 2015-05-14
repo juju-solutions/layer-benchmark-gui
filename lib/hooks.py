@@ -32,6 +32,7 @@ def install():
                                                        'redis-server',
                                                        'python-requests',
                                                       ]))
+
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
                     '/etc/apache2/sites-available/cabs-graphite.conf')
@@ -48,40 +49,15 @@ def install():
     extract_tar('payload/collector-worker.tar.gz', '/opt/collector-worker')
     subprocess.check_call(['make', '.venv'], cwd='/opt/collector-worker')
 
-    with open('/opt/collector-web/conf/apache/app.conf', 'r') as f:
-        conf = f.read()
-
-        conf = "Listen 9000" + '\n' + conf
-        conf = conf.replace('<VirtualHost *:80>', '<VirtualHost *:9000>')
-        conf = conf.replace('/path/to/app/venv/dir',
-                            '/opt/collector-web/.venv')
-        conf = conf.replace('/path/to/dir/containing/wsgi/file',
-                            '/opt/collector-web/conf/apache')
-
-        with open('/etc/apache2/sites-available/cabs-collector-web.conf',
-                  'w') as a:
-            a.truncate()
-            a.write(conf)
-
-    with open('/opt/collector-web/conf/apache/app.wsgi', 'r+') as f:
-        conf = f.read()
-
-        conf = conf.replace("ini_path = '/path/to/myapp/production.ini'",
-                            "ini_path = '/opt/collector-web/production.ini'")
-        conf = conf.replace('<VirtualHost *:80>', '<VirtualHost *:9000>')
-        conf = conf.replace('/path/to/app/venv/dir',
-                            '/opt/collector-web/.venv')
-        conf = conf.replace('/path/to/dir/containing/wsgi/file',
-                            '/opt/collector-web/conf/apache')
-        f.seek(0, 0)
-        f.truncate()
-        f.write(conf)
+    # Install upstart config for collector-web
+    shutil.copyfile('/opt/collector-web/conf/upstart/collectorweb.conf',
+                    '/etc/init/collectorweb.conf')
 
     host.chownr('/opt/collector-web', 'ubuntu', 'ubuntu')
-    apache2.enable_site('cabs-collector-web')
 
     host.service_restart('apache2')
     host.service_restart('carbon-cache')
+    host.service_restart('collectorweb')
 
     # Install cron, vhost for gui, etc
     hookenv.open_port(9000)
@@ -138,7 +114,7 @@ def configure(force=False):
             f.truncate()
             f.write(ini)
 
-        host.service_restart('apache2')
+        host.service_restart('collectorweb')
 
 
 def benchmark():
@@ -169,6 +145,7 @@ def emitter_rel():
 
 def start():
     host.service_reload('apache2')
+    host.service_restart('collectorweb')
 
 
 def stop():
@@ -176,3 +153,4 @@ def stop():
     os.remove('/etc/apache2/sites-available/cabs-graphite.conf')
     host.service_reload('apache2')
     host.service_stop('carbon-cache')
+    host.service_stop('collectorweb')
