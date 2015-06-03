@@ -28,6 +28,6 @@ In order to collate data, a benchmark-enabled charm must support the `benchmark`
 To collect performance metrics about the system(s) being benchmarked, you'll need to install the subordinate `cabs-collector` charm. This charm will collect statistics such as disk i/o, memory usage, and even installed package state, back to `cabs`.
 
     juju deploy cabs-collector
-    juju add-relation cabs-collector:collector benchmark-gui:collector
+    juju add-relation cabs-collector:collector cabs:collector
     juju add-relation cabs-collector mediawiki
     juju add-relation cabs-collector mysql
