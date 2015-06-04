@@ -27,9 +27,9 @@ def install():
                                                        'apache2',
                                                        'apache2-mpm-worker',
                                                        'libapache2-mod-wsgi',
+                                                       'postgresql',
                                                        'python-virtualenv',
                                                        'python-dev',
-                                                       'redis-server',
                                                        'python-requests',
                                                       ]))
 
@@ -48,6 +48,17 @@ def install():
 
     extract_tar('payload/collector-worker.tar.gz', '/opt/collector-worker')
     subprocess.check_call(['make', '.venv'], cwd='/opt/collector-worker')
+
+    # setup postgres for collector-web
+    subprocess.check_call(
+        'sudo -u postgres psql -c "CREATE USER cabs WITH UNENCRYPTED PASSWORD \'cabs\';"',
+        shell=True)
+    subprocess.check_call(
+        'sudo -u postgres psql -c "CREATE DATABASE cabs WITH OWNER cabs;"',
+        shell=True)
+    subprocess.check_call(
+        '.venv/bin/initialize_db production.ini'.split(),
+        cwd='/opt/collector-worker')
 
     # Install upstart config for collector-web
     shutil.copyfile('/opt/collector-web/conf/upstart/collectorweb.conf',
