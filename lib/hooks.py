@@ -58,7 +58,7 @@ def install():
         shell=True)
     subprocess.check_call(
         '.venv/bin/initialize_db production.ini'.split(),
-        cwd='/opt/collector-worker')
+        cwd='/opt/collector-web')
 
     # Install upstart config for collector-web
     shutil.copyfile('/opt/collector-web/conf/upstart/collectorweb.conf',
