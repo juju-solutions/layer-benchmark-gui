@@ -85,21 +85,6 @@ def configure(force=False):
         f.truncate()
         f.write(contents)
 
-    if config.changed('debug'):
-        if not config.get('debug', False):
-            address = '127.0.0.1'
-        else:
-            address = '0.0.0.0'
-
-        with open('/etc/redis/redis.conf', 'r+') as f:
-            cfg = f.read()
-            cfg = re.sub(r'bind .*', 'bind %s' % address, cfg)
-            f.seek(0, 0)
-            f.truncate()
-            f.write(cfg)
-
-        host.service_restart('redis-server')
-
     if 'juju-secret' not in config:
         return
 
