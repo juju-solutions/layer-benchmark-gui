@@ -58,7 +58,7 @@ def install():
         shell=True)
     subprocess.check_call(
         '.venv/bin/initialize_db production.ini'.split(),
-        cwd='/opt/collector-worker')
+        cwd='/opt/collector-web')
 
     # Install upstart config for collector-web
     shutil.copyfile('/opt/collector-web/conf/upstart/collectorweb.conf',
@@ -84,21 +84,6 @@ def configure(force=False):
         f.seek(0, 0)
         f.truncate()
         f.write(contents)
-
-    if config.changed('debug'):
-        if not config.get('debug', False):
-            address = '127.0.0.1'
-        else:
-            address = '0.0.0.0'
-
-        with open('/etc/redis/redis.conf', 'r+') as f:
-            cfg = f.read()
-            cfg = re.sub(r'bind .*', 'bind %s' % address, cfg)
-            f.seek(0, 0)
-            f.truncate()
-            f.write(cfg)
-
-        host.service_restart('redis-server')
 
     if 'juju-secret' not in config:
         return
