@@ -50,8 +50,8 @@ def install():
     subprocess.check_call(['make', '.venv'], cwd='/opt/collector-worker')
 
     # setup postgres for collector-web
-    subprocess.check_call(['scripts/ensure_db.sh'])
     subprocess.check_call(['scripts/ensure_db_user.sh'])
+    subprocess.check_call(['scripts/ensure_db.sh'])
     subprocess.check_call(
         '.venv/bin/initialize_db production.ini'.split(),
         cwd='/opt/collector-web')
