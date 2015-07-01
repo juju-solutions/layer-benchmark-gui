@@ -16,9 +16,6 @@ from helpers import apache2
 from helpers.host import touch, extract_tar
 
 
-config = hookenv.config()
-
-
 def install():
     hookenv.log('Installing benchmark-gui')
     fetch.apt_update()
@@ -52,9 +49,6 @@ def install():
     # setup postgres for collector-web
     subprocess.check_call(['scripts/ensure_db_user.sh'])
     subprocess.check_call(['scripts/ensure_db.sh'])
-    subprocess.check_call(
-        '.venv/bin/initialize_db production.ini'.split(),
-        cwd='/opt/collector-web')
 
     # Install upstart config for collector-web
     shutil.copyfile('/opt/collector-web/conf/upstart/collectorweb.conf',
@@ -73,6 +67,11 @@ def install():
 
 
 def configure(force=False):
+    config = hookenv.config()
+
+    def changed(key):
+        return force or config.changed(key)
+
     with open('/etc/graphite/local_settings.py', 'r+') as f:
         contents = f.read()
         contents = re.sub(r'#TIME_ZONE = .*', "TIME_ZONE = 'Etc/UTC'",
@@ -84,29 +83,40 @@ def configure(force=False):
     if 'juju-secret' not in config:
         return
 
-    if config.changed('juju-user') or config.changed('juju-secret') or force:
-        api_addresses = os.getenv('JUJU_API_ADDRESSES')
-        if api_addresses is not None:
-            juju_api = 'wss://%s' % api_addresses.split()[0]
+    ini_path = '/opt/collector-web/production.ini'
+    with open(ini_path, 'r') as f:
+        ini = f.read()
 
-        graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
+    api_addresses = os.getenv('JUJU_API_ADDRESSES')
+    if api_addresses:
+        juju_api = 'wss://%s' % api_addresses.split()[0]
+        ini = re.sub(r'juju.api.endpoint =.*',
+                     'juju.api.endpoint = %s' % juju_api, ini)
 
-        with open('/opt/collector-web/production.ini', 'r+') as f:
-            ini = f.read()
-            ini = re.sub(r'juju.api.user = .*',
-                         'juju.api.user = %s' % config['juju-user'], ini)
-            ini = re.sub(r'juju.api.secret = .*',
-                         'juju.api.secret = %s' % config['juju-secret'], ini)
-            ini = re.sub(r'juju.api.endpoint = .*',
-                         'juju.api.endpoint = %s' % juju_api, ini)
-            ini = re.sub(r'graphite.url = .*',
-                         'graphite.url = %s' % graphite_url, ini)
+    ini = re.sub(
+        r'graphite.url =.*',
+        'graphite.url = http://%s:9001' % hookenv.unit_get('public-address'),
+        ini)
 
-            f.seek(0, 0)
-            f.truncate()
-            f.write(ini)
+    if changed('juju-user'):
+        ini = re.sub(
+            r'juju.api.user =.*',
+            'juju.api.user = %s' % config.get('juju-user') or '', ini)
 
-        host.service_restart('collectorweb')
+    if changed('juju-secret'):
+        ini = re.sub(
+            r'juju.api.secret =.*',
+            'juju.api.secret = %s' % config.get('juju-secret') or '', ini)
+
+    if changed('publish-url'):
+        ini = re.sub(
+            r'publish.url =.*',
+            'publish.url = %s' % config.get('publish-url') or '', ini)
+
+    with open(ini_path, 'w') as f:
+        f.write(ini)
+
+    host.service_restart('collectorweb')
 
 
 def benchmark():
