@@ -16,9 +16,6 @@ from helpers import apache2
 from helpers.host import touch, extract_tar
 
 
-config = hookenv.config()
-
-
 def install():
     hookenv.log('Installing benchmark-gui')
     fetch.apt_update()
@@ -70,6 +67,8 @@ def install():
 
 
 def configure(force=False):
+    config = hookenv.config()
+
     def changed(key):
         return force or config.changed(key)
 
