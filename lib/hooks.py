@@ -101,17 +101,17 @@ def configure(force=False):
     if changed('juju-user'):
         ini = re.sub(
             r'juju.api.user =.*',
-            'juju.api.user = %s' % config['juju-user'], ini)
+            'juju.api.user = %s' % config.get('juju-user') or '', ini)
 
     if changed('juju-secret'):
         ini = re.sub(
             r'juju.api.secret =.*',
-            'juju.api.secret = %s' % config['juju-secret'], ini)
+            'juju.api.secret = %s' % config.get('juju-secret') or '', ini)
 
     if changed('publish-url'):
         ini = re.sub(
             r'publish.url =.*',
-            'publish.url = %s' % config['publish-url'], ini)
+            'publish.url = %s' % config.get('publish-url') or '', ini)
 
     with open(ini_path, 'w') as f:
         f.write(ini)
