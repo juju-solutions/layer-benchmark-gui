@@ -1,6 +1,6 @@
 #Overview
 
-Canonical Automated Benchmarking Service or CABS is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud]) and continually improve on the services and benchmarks. CABS is able to perform the following tasks:
+CABS, or Canonical Benchmarking Service, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. CABS is able to perform the following tasks:
 - determine which benchmarks can be run for a given environment
 - list available benchmarks to run
 - run and track benchmarks
@@ -20,7 +20,6 @@ This guide aims to lead a user from zero to benchmarking. Prerequisites include:
 - Knowledge of [Juju](https://jujucharms.com) and how it [works](https://jujucharms.com/docs/stable/getting-started)
 - [Juju 1.24 recommended](https://jujucharms.com/get-started), Juju 1.23 minimum
 - A [Juju bootstrapped](https://jujucharms.com/docs/stable/getting-started) environment
-- A [Launchpad](https://launchpad.net) ID that has been added to the CABS Launchpad Team.
 
 ## Getting the CABS charms
 
@@ -28,7 +27,7 @@ You'll need to gain access to lp:~cabs-users group. You should already access if
 
 Set up a local Juju Repository, an example follows:
 
-    export JUJU_REPOSITORY=~/charms
+    export JUJU_REPOSITORY=$HOME/charms
     mkdir -p $JUJU_REPOSITORY/trusty
 
 Download the CABS and CABS Collector charms from LaunchPad
@@ -76,7 +75,7 @@ Stand up your target environment. For example, if we wanted to benchmark a media
 
 The CABS dashboard provides you with a high-level view of benchmark statistics, including:
 - The name of the service:benchmark.
-- It's state; running, errored, or complete.
+- It's state; running, queued, errored, or complete.
 - The unit or service the benchmark was run against.
 - The composite result; a single representative unit to judge the benchmark by.
 - The length of time it took for the benchmark to run, including any standing up or down required by the benchmark.
@@ -123,7 +122,7 @@ The "Import Data" button will display a file upload form. Upload a JSON file tha
 
 Benchmarks are written as [Juju Actions](https://jujucharms.com/docs/stable/actions) on charms. Benchmarks are typically either an [action](https://jujucharms.com/docs/stable/actions) on the service you wish to benchmark, a service which solely does benchmarking (load generation), or a subordinate which, when related, installs a benchmark suite.
 
-**TODO:** Link to public benchmarking docs
+Please refer to the [Juju Docs](https://jujucharms.com/docs/devel/authors-charm-benchmarks) for further details on developing benchmarks for Juju Charms.
 
 # Charms with benchmarks
  - [siege](https://github.com/juju-solutions/siege)
