@@ -1,6 +1,6 @@
-#Overview
+# Overview
 
-CABS, or Canonical Benchmarking Service, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. CABS is able to perform the following tasks:
+CABS, or Canonical Benchmarking System, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. CABS is able to perform the following tasks:
 - determine which benchmarks can be run for a given environment
 - list available benchmarks to run
 - run and track benchmarks
@@ -14,18 +14,11 @@ The CABS charm is the main way the user will interact with the benchmarking envi
 
 CABS is a proprietary tool developed by Canonical built on top of Juju free to all [Certified Public Cloud](http://partners.ubuntu.com/programmes/public-cloud) partners.
 
-# Getting Started
+# Getting the CABS charms
 
-This guide aims to lead a user from zero to benchmarking. Prerequisites include:
-- Knowledge of [Juju](https://jujucharms.com) and how it [works](https://jujucharms.com/docs/stable/getting-started)
-- [Juju 1.24 recommended](https://jujucharms.com/get-started), Juju 1.23 minimum
-- A [Juju bootstrapped](https://jujucharms.com/docs/stable/getting-started) environment
+If you are reading this you may already have done the following steps. However, for the sake of completeness and reference be sure you have gotten the charms and placed them in a charm directory.
 
-## Getting the CABS charms
-
-You'll need to gain access to lp:~cabs-users group. You should already access if you are reading this, however if you need to add other folks to this repository email Marco Ceppi <marco.ceppi@canonical.com> or Antonio Rosales <antonio.rosales@canonical.com>.
-
-Set up a local Juju Repository, an example follows:
+Set up a (local)[https://jujucharms.com/docs/stable/charms-deploying#deploying-from-a-local-repository] Juju Repository, an example follows:
 
     export JUJU_REPOSITORY=$HOME/charms
     mkdir -p $JUJU_REPOSITORY/trusty
@@ -35,8 +28,17 @@ Download the CABS and CABS Collector charms from LaunchPad
     cd $JUJU_REPOSITORY/trusty
     git clone git+ssh://<LP-USER>@git.launchpad.net/cabs
     git clone git+ssh://<LP-USER>@git.launchpad.net/cabs-collector
+    
+# Getting Started
 
-## Configuring CABS
+This guide aims to lead a user from zero to benchmarking. Prerequisites include:
+- Knowledge of [Juju](https://jujucharms.com) and how it [works](https://jujucharms.com/docs/stable/getting-started)
+- [Juju 1.24 recommended](https://jujucharms.com/get-started), Juju 1.23 minimum
+- A [Juju bootstrapped](https://jujucharms.com/docs/stable/getting-started) environment
+- Downloaded CABS and CABS Collector charms
+
+
+# Configuring CABS
 
 Assuming you already have a Juju environment [bootstrapped](https://jujucharms.com/docs/stable/charms) you will first need to deploy the cabs and cabs-collector charms into your environment.
 
@@ -71,7 +73,7 @@ Stand up your target environment. For example, if we wanted to benchmark a media
     # Relate the benchmark-aware charm to cabs so we can launch benchmarks from the CABS UI
     juju add-relation cabs siege
 
-## Basic use of the UI
+# Basic use of the UI
 
 The CABS dashboard provides you with a high-level view of benchmark statistics, including:
 - The name of the service:benchmark.
@@ -83,11 +85,11 @@ The CABS dashboard provides you with a high-level view of benchmark statistics, 
 
 You can launch actions directly from the CABS dashboard, rather than using the `juju action` command. Clicking on the "Launch Benchmark" button will give you a form where you can select the available benchmarks from any benchmark-enabled charm. Select the benchmark you'd like to run, choose the unit(s) to run against, the tag(s) you'd like associated with this run, and any configuration options and press "Launch". You'll then be returned to the dashboard, where you can monitor the status of the benchmark.
 
-### Benchmark Details
+## Benchmark Details
 
 Clicking on a benchmark name will take you to a page with the parameters, results, and collected metrics from that benchmark run.
 
-### Comparison
+## Comparison
 
 When you have more than one of the same type of benchmark, you can compare two or more benchmarks.
 
@@ -96,13 +98,13 @@ Moving your mouse over a benchmark will backlight all benchmarks of the same typ
 Use the selector to choose benchmarks to compare. Once two or more benchmarks are selected, the "Launch Benchmark" button will offer a drop-down option to compare.
 
 
-### Importing/Exporting data
+## Importing/Exporting data
 
 You can export and import CABS benchmark data in two ways:
 - Via buttons on the CABS dashboard
 - Via API endpoints
 
-#### Exporting
+### Exporting
 
 The "Export Data" button will download a JSON file of all the benchmark data in the CABS database. This includes benchmark data generated in the current environment as well as data previously imported from other environments.
 
@@ -111,7 +113,7 @@ The exported file includes benchmark data, metric data, graph data, profile data
     # API Export
     curl http://ip-address:9000/api/export > /tmp/export.json
 
-#### Importing
+### Importing
 
 The "Import Data" button will display a file upload form. Upload a JSON file that was previously exported from a CABS environment. Multiple files may be imported one after another, making it possible to consolidate data from many different CABS environments.
 
