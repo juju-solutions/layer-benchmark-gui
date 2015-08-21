@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import shutil
+import logging
 import subprocess
 
 sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
@@ -17,7 +18,7 @@ from helpers.host import touch, extract_tar
 
 
 def install():
-    hookenv.log('Installing benchmark-gui')
+    hookenv.status_set('maintenance', 'Installing CABS')
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
                                                        'graphite-web',
@@ -41,10 +42,19 @@ def install():
                           shell=True)
 
     extract_tar('payload/collector-web.tar.gz', '/opt/collector-web')
-    subprocess.check_call(['make', '.venv'], cwd='/opt/collector-web')
-
-    extract_tar('payload/collector-worker.tar.gz', '/opt/collector-worker')
-    subprocess.check_call(['make', '.venv'], cwd='/opt/collector-worker')
+    config = hookenv.config()
+    try:
+        env = None
+        if config.get('proxy'):
+            env = dict(os.environ)
+            env.update({'http_proxy': config.get('proxy'),
+                        'https_proxy': config.get('proxy')})
+        subprocess.check_call(['make', '.venv'], cwd='/opt/collector-web',
+                              env=env)
+    except subprocess.CalledProcessError as e:
+        logging.exception(e)
+        hookenv.status_set('blocked', 'Failed to create venv - do you require a proxy?')
+        return
 
     # setup postgres for collector-web
     subprocess.check_call(['scripts/ensure_db_user.sh'])
@@ -71,6 +81,12 @@ def configure(force=False):
 
     def changed(key):
         return force or config.changed(key)
+
+    if config.changed('proxy') and config.get('proxy'):
+        shutil.rmtree('/opt/collector-web')
+        install()
+        if hookenv.status_get() == 'blocked':
+            return  # We're blocked again
 
     with open('/etc/graphite/local_settings.py', 'r+') as f:
         contents = f.read()
@@ -117,6 +133,8 @@ def configure(force=False):
         f.write(ini)
 
     host.service_restart('collectorweb')
+    hookenv.status_set('active',
+                       'Ready http://%s:9000' % hookenv.unit_public_ip())
 
 
 def benchmark():

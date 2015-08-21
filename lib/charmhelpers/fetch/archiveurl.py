@@ -1,6 +1,32 @@
+# Copyright 2014-2015 Canonical Limited.
+#
+# This file is part of charm-helpers.
+#
+# charm-helpers is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# charm-helpers is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with charm-helpers.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import hashlib
 import re
+
+from charmhelpers.fetch import (
+    BaseFetchHandler,
+    UnhandledSource
+)
+from charmhelpers.payload.archive import (
+    get_archive_handler,
+    extract,
+)
+from charmhelpers.core.host import mkdir, check_hash
 
 import six
 if six.PY3:
@@ -18,16 +44,6 @@ else:
         URLError
     )
     from urlparse import urlparse, urlunparse, parse_qs
-
-from charmhelpers.fetch import (
-    BaseFetchHandler,
-    UnhandledSource
-)
-from charmhelpers.payload.archive import (
-    get_archive_handler,
-    extract,
-)
-from charmhelpers.core.host import mkdir, check_hash
 
 
 def splituser(host):
@@ -61,6 +77,8 @@ class ArchiveUrlFetchHandler(BaseFetchHandler):
     def can_handle(self, source):
         url_parts = self.parse_url(source)
         if url_parts.scheme not in ('http', 'https', 'ftp', 'file'):
+            # XXX: Why is this returning a boolean and a string? It's
+            # doomed to fail since "bool(can_handle('foo://'))"  will be True.
             return "Wrong source type"
         if get_archive_handler(self.base_url(source)):
             return True
@@ -139,7 +157,11 @@ class ArchiveUrlFetchHandler(BaseFetchHandler):
             else:
                 algorithms = hashlib.algorithms_available
             if key in algorithms:
-                check_hash(dld_file, value, key)
+                if len(value) != 1:
+                    raise TypeError(
+                        "Expected 1 hash value, not %d" % len(value))
+                expected = value[0]
+                check_hash(dld_file, expected, key)
         if checksum:
             check_hash(dld_file, checksum, hash_type)
         return extract(dld_file, dest)
