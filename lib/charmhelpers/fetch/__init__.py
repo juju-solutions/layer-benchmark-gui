@@ -1,3 +1,19 @@
+# Copyright 2014-2015 Canonical Limited.
+#
+# This file is part of charm-helpers.
+#
+# charm-helpers is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# charm-helpers is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with charm-helpers.  If not, see <http://www.gnu.org/licenses/>.
+
 import importlib
 from tempfile import NamedTemporaryFile
 import time
@@ -74,6 +90,14 @@ CLOUD_ARCHIVE_POCKETS = {
     'kilo/proposed': 'trusty-proposed/kilo',
     'trusty-kilo/proposed': 'trusty-proposed/kilo',
     'trusty-proposed/kilo': 'trusty-proposed/kilo',
+    # Liberty
+    'liberty': 'trusty-updates/liberty',
+    'trusty-liberty': 'trusty-updates/liberty',
+    'trusty-liberty/updates': 'trusty-updates/liberty',
+    'trusty-updates/liberty': 'trusty-updates/liberty',
+    'liberty/proposed': 'trusty-proposed/liberty',
+    'trusty-liberty/proposed': 'trusty-proposed/liberty',
+    'trusty-proposed/liberty': 'trusty-proposed/liberty',
 }
 
 # The order of this list is very important. Handlers should be listed in from
@@ -142,7 +166,7 @@ def filter_installed_packages(packages):
 
 def apt_cache(in_memory=True):
     """Build and return an apt cache"""
-    import apt_pkg
+    from apt import apt_pkg
     apt_pkg.init()
     if in_memory:
         apt_pkg.config.set("Dir::Cache::pkgcache", "")
@@ -199,9 +223,9 @@ def apt_purge(packages, fatal=False):
     _run_apt_command(cmd, fatal)
 
 
-def apt_hold(packages, fatal=False):
-    """Hold one or more packages"""
-    cmd = ['apt-mark', 'hold']
+def apt_mark(packages, mark, fatal=False):
+    """Flag one or more packages using apt-mark"""
+    cmd = ['apt-mark', mark]
     if isinstance(packages, six.string_types):
         cmd.append(packages)
     else:
@@ -209,9 +233,17 @@ def apt_hold(packages, fatal=False):
     log("Holding {}".format(packages))
 
     if fatal:
-        subprocess.check_call(cmd)
+        subprocess.check_call(cmd, universal_newlines=True)
     else:
-        subprocess.call(cmd)
+        subprocess.call(cmd, universal_newlines=True)
+
+
+def apt_hold(packages, fatal=False):
+    return apt_mark(packages, 'hold', fatal=fatal)
+
+
+def apt_unhold(packages, fatal=False):
+    return apt_mark(packages, 'unhold', fatal=fatal)
 
 
 def add_source(source, key=None):
@@ -354,8 +386,9 @@ def install_remote(source, *args, **kwargs):
     for handler in handlers:
         try:
             installed_to = handler.install(source, *args, **kwargs)
-        except UnhandledSource:
-            pass
+        except UnhandledSource as e:
+            log('Install source attempt unsuccessful: {}'.format(e),
+                level='WARNING')
     if not installed_to:
         raise UnhandledSource("No handler found for source {}".format(source))
     return installed_to
