@@ -1,4 +1,8 @@
 options:
+  proxy:
+    default:
+    type: "string"
+    description: "Proxy to use when fetching resources from PyPI, if not already set in Juju"
   juju-user:
     default: "user-admin"
     type: "string"
