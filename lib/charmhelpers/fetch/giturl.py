@@ -1,3 +1,19 @@
+# Copyright 2014-2015 Canonical Limited.
+#
+# This file is part of charm-helpers.
+#
+# charm-helpers is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# charm-helpers is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with charm-helpers.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 from charmhelpers.fetch import (
     BaseFetchHandler,
@@ -16,6 +32,8 @@ except ImportError:
     apt_install("python-git")
     from git import Repo
 
+from git.exc import GitCommandError  # noqa E402
+
 
 class GitUrlFetchHandler(BaseFetchHandler):
     """Handler for git branches via generic and github URLs"""
@@ -27,14 +45,16 @@ class GitUrlFetchHandler(BaseFetchHandler):
         else:
             return True
 
-    def clone(self, source, dest, branch):
+    def clone(self, source, dest, branch, depth=None):
         if not self.can_handle(source):
             raise UnhandledSource("Cannot handle {}".format(source))
 
-        repo = Repo.clone_from(source, dest)
-        repo.git.checkout(branch)
+        if depth:
+            Repo.clone_from(source, dest, branch=branch, depth=depth)
+        else:
+            Repo.clone_from(source, dest, branch=branch)
 
-    def install(self, source, branch="master", dest=None):
+    def install(self, source, branch="master", dest=None, depth=None):
         url_parts = self.parse_url(source)
         branch_name = url_parts.path.strip("/").split("/")[-1]
         if dest:
@@ -45,7 +65,9 @@ class GitUrlFetchHandler(BaseFetchHandler):
         if not os.path.exists(dest_dir):
             mkdir(dest_dir, perms=0o755)
         try:
-            self.clone(source, dest_dir, branch)
+            self.clone(source, dest_dir, branch, depth)
+        except GitCommandError as e:
+            raise UnhandledSource(e)
         except OSError as e:
             raise UnhandledSource(e.strerror)
         return dest_dir
