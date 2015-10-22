@@ -18,7 +18,7 @@ CABS is a proprietary tool developed by Canonical built on top of Juju free to a
 
 If you are reading this you may already have done the following steps. However, for the sake of completeness and reference be sure you have gotten the charms and placed them in a charm directory.
 
-Set up a (local)[https://jujucharms.com/docs/stable/charms-deploying#deploying-from-a-local-repository] Juju Repository, an example follows:
+Set up a [local](https://jujucharms.com/docs/stable/charms-deploying#deploying-from-a-local-repository) Juju Repository, an example follows:
 
     export JUJU_REPOSITORY=$HOME/charms
     mkdir -p $JUJU_REPOSITORY/trusty
@@ -45,15 +45,19 @@ Assuming you already have a Juju environment [bootstrapped](https://jujucharms.c
     juju deploy local:trusty/cabs
     juju deploy local:trusty/cabs-collector
 
-The cabs charm needs to communicate with the Juju API server. In order to do that, you'll need to set the juju-secret configuration key. This is the "password" field in any bootstrapped environments, .jenv file, or the `admin-secret` key in your environments.yaml file. One way to achieve this is to run the following command:
+The cabs charm needs to communicate with the Juju API server. In order to do that, you'll need to set the `juju-secret` configuration key. This is the "password" field in any bootstrapped environments, .jenv file, or the `admin-secret` key in your environments.yaml file. One way to achieve this is to run the following command:
 
-    grep "password" ~/.juju/environments/$(juju switch).jenv | awk '{ print $2 }'
+    juju api-info user password
 
-Then set the juju-secret key for CABS by doing the following.
+Then set the `juju-secret` key for CABS by doing the following.
 
-    juju set cabs juju-secret=<admin-secret>
+    juju set cabs juju-secret=<admin-password>
+    
+Expose the CABS charm so the CABS GUI is accessible via a web browser.
 
-Once that's set, the cabs charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.
+    juju expose cabs
+
+Once the CABS charm is exposed and `juju-secret` set, the CABS charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.
 
 Stand up your target environment. For example, if we wanted to benchmark a mediawiki deployment, we would do something like this:
 
