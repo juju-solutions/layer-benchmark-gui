@@ -10,7 +10,7 @@ tags:
   - misc
 requires:
   collector:
-    interface: cabs-metrics
+    interface: benchmark-collector
   benchmark:
     interface: benchmark
 provides:

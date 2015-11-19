@@ -1,3 +1,4 @@
+import json
 import re
 import os
 import sys
@@ -5,11 +6,14 @@ import shutil
 import logging
 import subprocess
 
+import requests
+
 sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
 
 from charmhelpers.core import (
     hookenv,
     host,
+    unitdata,
 )
 
 from charmhelpers import fetch
@@ -20,16 +24,17 @@ from helpers.host import touch, extract_tar
 def install():
     hookenv.status_set('maintenance', 'Installing CABS')
     fetch.apt_update()
-    fetch.apt_install(fetch.filter_installed_packages(['graphite-carbon',
-                                                       'graphite-web',
-                                                       'apache2',
-                                                       'apache2-mpm-worker',
-                                                       'libapache2-mod-wsgi',
-                                                       'postgresql',
-                                                       'python-virtualenv',
-                                                       'python-dev',
-                                                       'python-requests',
-                                                      ]))
+    fetch.apt_install(fetch.filter_installed_packages([
+        'graphite-carbon',
+        'graphite-web',
+        'apache2',
+        'apache2-mpm-worker',
+        'libapache2-mod-wsgi',
+        'postgresql',
+        'python-virtualenv',
+        'python-dev',
+        'python-requests',
+    ]))
 
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
     shutil.copyfile('files/graphite.conf',
@@ -53,7 +58,8 @@ def install():
                               env=env)
     except subprocess.CalledProcessError as e:
         logging.exception(e)
-        hookenv.status_set('blocked', 'Failed to create venv - do you require a proxy?')
+        hookenv.status_set(
+            'blocked', 'Failed to create venv - do you require a proxy?')
         return
 
     # setup postgres for collector-web
@@ -137,24 +143,47 @@ def configure(force=False):
                        'Ready http://%s:9000' % hookenv.unit_public_ip())
 
 
+def set_action_id(action_id):
+    if unitdata.kv().get('action_id') == action_id:
+        # We've already seen this action_id
+        return
+
+    unitdata.kv().set('action_id', action_id)
+
+    if not action_id:
+        return
+
+    # Broadcast action_id to collectors
+    for rid in hookenv.relation_ids('collector'):
+        hookenv.relation_set(relation_id=rid, relation_settings={
+            'action_id': action_id
+        })
+
+
 def benchmark():
-    if hookenv.in_relation_hook():
-        import json
-        import requests
-        benchmarks = hookenv.relation_get('benchmarks')
-        if benchmarks:
-            hookenv.log('benchmarks received: %s' % benchmarks)
-            service = hookenv.remote_unit().split('/')[0]
-            payload = {'benchmarks': [b for b in benchmarks.split(',')]}
-            r = requests.post('http://localhost:9000/api/services/%s' % service,
-                              data=json.dumps(payload),
-                              headers={'content-type': 'application/json'})
+    if not hookenv.in_relation_hook():
+        return
 
-        graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
+    set_action_id(hookenv.relation_get('action_id'))
 
-        hookenv.relation_set(hostname=hookenv.unit_private_ip(),
-                             port=2003, graphite_port=9001,
-                             graphite_endpoint=graphite_url, api_port=9000)
+    benchmarks = hookenv.relation_get('benchmarks')
+    if benchmarks:
+        hookenv.log('benchmarks received: %s' % benchmarks)
+        service = hookenv.remote_unit().split('/')[0]
+        payload = {'benchmarks': [b for b in benchmarks.split(',')]}
+        requests.post(
+            'http://localhost:9000/api/services/{}'.format(service),
+            data=json.dumps(payload),
+            headers={
+                'content-type': 'application/json'
+            }
+        )
+
+    graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
+
+    hookenv.relation_set(hostname=hookenv.unit_private_ip(),
+                         port=2003, graphite_port=9001,
+                         graphite_endpoint=graphite_url, api_port=9000)
 
 
 def emitter_rel():
