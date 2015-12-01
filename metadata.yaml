@@ -1,4 +1,4 @@
-name: cabs
+name: benchmark-gui
 summary: Graphical User Interface and metric collection service
 maintainers:
   - Marco Ceppi <marco.ceppi@canonical.com>

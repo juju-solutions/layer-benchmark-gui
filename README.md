@@ -1,6 +1,6 @@
 # Overview
 
-CABS, or Canonical Benchmarking System, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. CABS is able to perform the following tasks:
+Benchmark GUI, for Charm Benchmarking, is a set of Juju Charms to repeatedly run benchmarks across multiple different substrates (bare metal[x86, POWER, ARM], public, private cloud) and continually improve on the services and benchmarks. Benchmark GUI is able to perform the following tasks:
 - determine which benchmarks can be run for a given environment
 - list available benchmarks to run
 - run and track benchmarks
@@ -8,56 +8,33 @@ CABS, or Canonical Benchmarking System, is a set of Juju Charms to repeatedly ru
 - report on results
 - compare benchmark runs
 
-The main intent is to allow folks interested in a given workload to repeatedly run a benchmark across multiple substrates, and enable quick experimentation to improve the service's performance. CABS takes care of the benchmarking infrastructure so the focus is on the science of tuning.
+The main intent is to allow folks interested in a given workload to repeatedly run a benchmark across multiple substrates, and enable quick experimentation to improve the service's performance. Benchmark GUI takes care of the benchmarking infrastructure so the focus is on the science of tuning.
 
-The CABS charm is the main way the user will interact with the benchmarking environment. The CABS charm provides a GUI that allows the user to perform the above mentioned actions.
+The Benchmark GUI charm is the main way the user will interact with the benchmarking environment. The Benchmark GUI charm provides a GUI that allows the user to perform the above mentioned actions.
 
-CABS is a proprietary tool developed by Canonical built on top of Juju free to all [Certified Public Cloud](http://partners.ubuntu.com/programmes/public-cloud) partners.
-
-# Getting the CABS charms
-
-If you are reading this you may already have done the following steps. However, for the sake of completeness and reference be sure you have gotten the charms and placed them in a charm directory.
-
-Set up a [local](https://jujucharms.com/docs/stable/charms-deploying#deploying-from-a-local-repository) Juju Repository, an example follows:
-
-    export JUJU_REPOSITORY=$HOME/charms
-    mkdir -p $JUJU_REPOSITORY/trusty
-
-Download the CABS and CABS Collector charms from LaunchPad
-
-    cd $JUJU_REPOSITORY/trusty
-    git clone git+ssh://<LP-USER>@git.launchpad.net/cabs
-    git clone git+ssh://<LP-USER>@git.launchpad.net/cabs-collector
-    
 # Getting Started
 
 This guide aims to lead a user from zero to benchmarking. Prerequisites include:
 - Knowledge of [Juju](https://jujucharms.com) and how it [works](https://jujucharms.com/docs/stable/getting-started)
-- [Juju 1.24 recommended](https://jujucharms.com/get-started), Juju 1.23 minimum
+- [Latest Juju version recommended](https://jujucharms.com/get-started), Juju 1.24 minimum
 - A [Juju bootstrapped](https://jujucharms.com/docs/stable/getting-started) environment
-- Downloaded CABS and CABS Collector charms
 
+# Configuring Benchmark GUI
 
-# Configuring CABS
+Assuming you already have a Juju environment [bootstrapped](https://jujucharms.com/docs/stable/charms) you will first need to deploy the Benchmark GUI and benchmark-collector charms into your environment.
 
-Assuming you already have a Juju environment [bootstrapped](https://jujucharms.com/docs/stable/charms) you will first need to deploy the cabs and cabs-collector charms into your environment.
+    juju deploy local:trusty/benchmark-gui
+    juju deploy local:trusty/benchmark-collector
 
-    juju deploy local:trusty/cabs
-    juju deploy local:trusty/cabs-collector
+The Benchmark GUI charm needs to communicate with the Juju API server. In order to do that, you'll need to set the juju-secret configuration key. This is the "password" field in any bootstrapped environments, .jenv file, or the `admin-secret` key in your environments.yaml file. One way to achieve this is to run the following command:
 
-The cabs charm needs to communicate with the Juju API server. In order to do that, you'll need to set the `juju-secret` configuration key. This is the "password" field in any bootstrapped environments, .jenv file, or the `admin-secret` key in your environments.yaml file. One way to achieve this is to run the following command:
+    grep "password" ~/.juju/environments/$(juju switch).jenv | awk '{ print $2 }'
 
-    juju api-info user password
+Then set the juju-secret key for Benchmark GUI by doing the following.
 
-Then set the `juju-secret` key for CABS by doing the following.
+    juju set benchmark-gui juju-secret=<admin-secret>
 
-    juju set cabs juju-secret=<admin-password>
-    
-Expose the CABS charm so the CABS GUI is accessible via a web browser.
-
-    juju expose cabs
-
-Once the CABS charm is exposed and `juju-secret` set, the CABS charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.
+Once that's set, the Benchmark GUI charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.
 
 Stand up your target environment. For example, if we wanted to benchmark a mediawiki deployment, we would do something like this:
 
@@ -68,18 +45,18 @@ Stand up your target environment. For example, if we wanted to benchmark a media
     juju add-relation mysql mediawiki:db
     juju add-relation mediawiki siege
 
-    # Setup the subordinate relation between cabs-collector and the services to be benchmarked
-    juju add-relation cabs-collector mediawiki
-    juju add-relation cabs-collector mysql
+    # Setup the subordinate relation between benchmark-collector and the services to be benchmarked
+    juju add-relation benchmark-collector mediawiki
+    juju add-relation benchmark-collector mysql
 
-    juju add-relation cabs cabs-collector:collector
+    juju add-relation benchmark-gui benchmark-collector:collector
 
-    # Relate the benchmark-aware charm to cabs so we can launch benchmarks from the CABS UI
-    juju add-relation cabs siege
+    # Relate the benchmark-aware charm to benchmark-gui so we can launch benchmarks from the benchmark UI
+    juju add-relation benchmark-gui siege
 
 # Basic use of the UI
 
-The CABS dashboard provides you with a high-level view of benchmark statistics, including:
+The Benchmark GUI dashboard provides you with a high-level view of benchmark statistics, including:
 - The name of the service:benchmark.
 - It's state; running, queued, errored, or complete.
 - The unit or service the benchmark was run against.
@@ -87,7 +64,7 @@ The CABS dashboard provides you with a high-level view of benchmark statistics, 
 - The length of time it took for the benchmark to run, including any standing up or down required by the benchmark.
 - When the benchmark was launched.
 
-You can launch actions directly from the CABS dashboard, rather than using the `juju action` command. Clicking on the "Launch Benchmark" button will give you a form where you can select the available benchmarks from any benchmark-enabled charm. Select the benchmark you'd like to run, choose the unit(s) to run against, the tag(s) you'd like associated with this run, and any configuration options and press "Launch". You'll then be returned to the dashboard, where you can monitor the status of the benchmark.
+You can launch actions directly from the Benchmark GUI dashboard, rather than using the `juju action` command. Clicking on the "Launch Benchmark" button will give you a form where you can select the available benchmarks from any benchmark-enabled charm. Select the benchmark you'd like to run, choose the unit(s) to run against, the tag(s) you'd like associated with this run, and any configuration options and press "Launch". You'll then be returned to the dashboard, where you can monitor the status of the benchmark.
 
 ## Benchmark Details
 
@@ -104,22 +81,22 @@ Use the selector to choose benchmarks to compare. Once two or more benchmarks ar
 
 ## Importing/Exporting data
 
-You can export and import CABS benchmark data in two ways:
-- Via buttons on the CABS dashboard
+You can export and import benchmark data in two ways:
+- Via buttons on the Benchmark GUI dashboard
 - Via API endpoints
 
 ### Exporting
 
-The "Export Data" button will download a JSON file of all the benchmark data in the CABS database. This includes benchmark data generated in the current environment as well as data previously imported from other environments.
+The "Export Data" button will download a JSON file of all the benchmark data in the Benchmark GUI database. This includes benchmark data generated in the current environment as well as data previously imported from other environments.
 
-The exported file includes benchmark data, metric data, graph data, profile data, and comparison data. The file may be saved and later imported into another CABS environment.
+The exported file includes benchmark data, metric data, graph data, profile data, and comparison data. The file may be saved and later imported into another Benchmark GUI environment.
 
     # API Export
     curl http://ip-address:9000/api/export > /tmp/export.json
 
 ### Importing
 
-The "Import Data" button will display a file upload form. Upload a JSON file that was previously exported from a CABS environment. Multiple files may be imported one after another, making it possible to consolidate data from many different CABS environments.
+The "Import Data" button will display a file upload form. Upload a JSON file that was previously exported from a Benchmark GUI environment. Multiple files may be imported one after another, making it possible to consolidate data from many different Benchmark GUI environments.
 
     # API Import
     curl -X POST http://ip-address:9000/api/import -d @/tmp/export.json --header "Content-Type: application/json"
