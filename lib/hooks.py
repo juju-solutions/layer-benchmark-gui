@@ -74,7 +74,7 @@ def install():
 
     host.service_restart('apache2')
     host.service_restart('carbon-cache')
-    host.service_restart('collectorweb')
+    restart_collectorweb()
 
     # Install cron, vhost for gui, etc
     hookenv.open_port(9000)
@@ -111,7 +111,20 @@ def configure(force=False):
 
     api_addresses = os.getenv('JUJU_API_ADDRESSES')
     if api_addresses:
-        juju_api = 'wss://%s' % api_addresses.split()[0]
+        if 'JUJU_ENV_UUID' in os.environ:
+            # juju 1.x
+            typ = 'environment'
+            uuid = os.environ['JUJU_ENV_UUID']
+        else:
+            # juju 2.x +
+            typ = 'model'
+            uuid = os.environ['JUJU_MODEL_UUID']
+
+        juju_api = 'wss://{server}/{typ}/{uuid}/api'.format(
+            server=api_addresses.split()[0],
+            typ=typ,
+            uuid=uuid,
+        )
         ini = re.sub(r'juju.api.endpoint =.*',
                      'juju.api.endpoint = %s' % juju_api, ini)
 
@@ -138,7 +151,7 @@ def configure(force=False):
     with open(ini_path, 'w') as f:
         f.write(ini)
 
-    host.service_restart('collectorweb')
+    restart_collectorweb()
     hookenv.status_set('active',
                        'Ready http://%s:9000' % hookenv.unit_public_ip())
 
@@ -160,17 +173,18 @@ def set_action_id(action_id):
         })
 
 
-def benchmark():
-    if not hookenv.in_relation_hook():
-        return
+def set_benchmark_actions(rid, unit):
+    """Tell collectorweb which actions are benchmarks for the relation
+    defined by this rid and unit.
 
-    set_action_id(hookenv.relation_get('action_id'))
-
-    benchmarks = hookenv.relation_get('benchmarks')
+    """
+    benchmarks = hookenv.relation_get('benchmarks', unit=unit, rid=rid)
     if benchmarks:
-        hookenv.log('benchmarks received: %s' % benchmarks)
-        service = hookenv.remote_unit().split('/')[0]
+        service = unit.split('/')[0]
         payload = {'benchmarks': [b for b in benchmarks.split(',')]}
+        hookenv.log(
+            'Setting benchmarks for {}: {}'.format(
+                service, payload['benchmarks']))
         requests.post(
             'http://localhost:9000/api/services/{}'.format(service),
             data=json.dumps(payload),
@@ -178,6 +192,16 @@ def benchmark():
                 'content-type': 'application/json'
             }
         )
+
+
+def benchmark():
+    if not hookenv.in_relation_hook():
+        return
+
+    set_action_id(hookenv.relation_get('action_id'))
+
+    if host.service_running('collectorweb'):
+        set_benchmark_actions(hookenv.relation_id(), hookenv.remote_unit())
 
     graphite_url = 'http://%s:9001' % hookenv.unit_get('public-address')
 
@@ -192,9 +216,22 @@ def emitter_rel():
                              api_port=9000)
 
 
+def restart_collectorweb():
+    """Restart collectorweb tell it which actions are benchmarks
+    for each service on the 'benchmark' relation. This ensures that
+    collectorweb has the latest data from the relation, even if it
+    wasn't running when the relation hooks were fired.
+
+    """
+    host.service_restart('collectorweb')
+    for rid in hookenv.relation_ids('benchmark'):
+        for unit in hookenv.related_units(rid):
+            set_benchmark_actions(rid, unit)
+
+
 def start():
     host.service_reload('apache2')
-    host.service_restart('collectorweb')
+    restart_collectorweb()
 
 
 def stop():

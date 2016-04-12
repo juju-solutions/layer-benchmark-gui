@@ -26,13 +26,22 @@ Assuming you already have a Juju environment [bootstrapped](https://jujucharms.c
     juju deploy local:trusty/benchmark-gui
     juju deploy local:trusty/benchmark-collector
 
-The Benchmark GUI charm needs to communicate with the Juju API server. In order to do that, you'll need to set the juju-secret configuration key. This is the "password" field in any bootstrapped environments, .jenv file, or the `admin-secret` key in your environments.yaml file. One way to achieve this is to run the following command:
+The Benchmark GUI charm needs to communicate with the Juju API server. In order to do that, you'll need to set the juju-secret configuration key. In a Juju 1.x environment, you can get the value like this:
 
-    grep "password" ~/.juju/environments/$(juju switch).jenv | awk '{ print $2 }'
+    juju api-info password
 
-Then set the juju-secret key for Benchmark GUI by doing the following.
+In a Juju 2.x environment:
 
-    juju set benchmark-gui juju-secret=<admin-secret>
+    juju show-controller --show-passwords  # look for the 'password'
+field in the output
+
+Once you have the API password, set the juju-secret key for Benchmark GUI by doing the following.
+
+    juju set benchmark-gui juju-secret=<password> # Juju 1.x
+
+or
+
+    juju set-config benchmark-gui juju-secret=<password> # Juju 2.x
 
 Once that's set, the Benchmark GUI charm will finish it's configuration and you'll be able to browse to http://ip-address:9000/ to view and compare the benchmark metrics.
 
