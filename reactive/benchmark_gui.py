@@ -5,11 +5,9 @@ import sys
 import shutil
 import logging
 import subprocess
-
 import requests
 
-sys.path.insert(0, os.path.join(os.environ['CHARM_DIR'], 'lib'))
-
+from charms.reactive import when, when_not, set_state, hook
 from charmhelpers.core import (
     hookenv,
     host,
@@ -20,8 +18,11 @@ from charmhelpers import fetch
 from helpers import apache2
 from helpers.host import touch, extract_tar
 
+#TODO: use reactive states instead of hooks
+#TODO: use templates instead of ./files
 
-def install():
+@hook('install')
+def install_benchmark_gui():
     hookenv.status_set('maintenance', 'Installing CABS')
     fetch.apt_update()
     fetch.apt_install(fetch.filter_installed_packages([
@@ -33,7 +34,6 @@ def install():
         'postgresql',
         'python-virtualenv',
         'python-dev',
-        'python-requests',
     ]))
 
     touch('/etc/apache2/sites-available/cabs-graphite.conf')
@@ -82,6 +82,7 @@ def install():
     hookenv.open_port(2003)
 
 
+@hook('config-changed')
 def configure(force=False):
     config = hookenv.config()
 
@@ -194,6 +195,7 @@ def set_benchmark_actions(rid, unit):
         )
 
 
+@hook('benchmark-relation-changed')
 def benchmark():
     if not hookenv.in_relation_hook():
         return
@@ -210,6 +212,7 @@ def benchmark():
                          graphite_endpoint=graphite_url, api_port=9000)
 
 
+@hook('collector-relation-changed')
 def emitter_rel():
     if hookenv.in_relation_hook():
         hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003,
@@ -229,14 +232,24 @@ def restart_collectorweb():
             set_benchmark_actions(rid, unit)
 
 
+@hook('start')
 def start():
     host.service_reload('apache2')
     restart_collectorweb()
 
 
+@hook('stop')
 def stop():
     apache2.disable_site('cabs-graphite')
     os.remove('/etc/apache2/sites-available/cabs-graphite.conf')
     host.service_reload('apache2')
     host.service_stop('carbon-cache')
     host.service_stop('collectorweb')
+
+
+@hook('upgrade-charm')
+def upgrade():
+    shutil.rmtree('/opt/collector-web')
+    install()
+    configure(True)
+    start()
