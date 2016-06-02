@@ -91,7 +91,7 @@ def configure(force=False):
 
     if config.changed('proxy') and config.get('proxy'):
         shutil.rmtree('/opt/collector-web')
-        install()
+        install_benchmark_gui()
         if hookenv.status_get() == 'blocked':
             return  # We're blocked again
 
@@ -212,8 +212,8 @@ def benchmark_registered(benchmark):
                          graphite_endpoint=graphite_url, api_port=9000)
 
 
-@when('benchmark-collector.connected')
-def emitter_rel():
+@when('collector.connected')
+def emitter_rel(collector):
     if hookenv.in_relation_hook():
         hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003,
                              api_port=9000)
@@ -250,6 +250,6 @@ def stop():
 @hook('upgrade-charm')
 def upgrade():
     shutil.rmtree('/opt/collector-web')
-    install()
+    install_benchmark_gui()
     configure(True)
     start()
