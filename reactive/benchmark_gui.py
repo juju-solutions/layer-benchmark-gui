@@ -195,8 +195,8 @@ def set_benchmark_actions(rid, unit):
         )
 
 
-@hook('benchmark-relation-changed')
-def benchmark():
+@when('benchmark.registered')
+def benchmark_registered(benchmark):
     if not hookenv.in_relation_hook():
         return
 
