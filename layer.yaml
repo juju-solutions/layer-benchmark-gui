@@ -1,4 +1,7 @@
-includes: ['layer:basic', 'interface:benchmark', 'interface:benchmark-collector']
+includes:
+  - layer:basic
+  - interface:benchmark
+  - interface:benchmark-collector
 options:
   basic:
     packages:
