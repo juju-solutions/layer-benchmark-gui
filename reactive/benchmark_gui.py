@@ -212,7 +212,7 @@ def benchmark_registered(benchmark):
                          graphite_endpoint=graphite_url, api_port=9000)
 
 
-@hook('collector-relation-changed')
+@when('collector.connected')
 def emitter_rel():
     if hookenv.in_relation_hook():
         hookenv.relation_set(hostname=hookenv.unit_private_ip(), port=2003,
