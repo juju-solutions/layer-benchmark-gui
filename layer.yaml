@@ -1,5 +1,6 @@
 includes:
   - layer:basic
+  - interface:elasticsearch
   - interface:benchmark
   - interface:benchmark-collector
 options:

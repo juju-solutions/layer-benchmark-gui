@@ -103,6 +103,8 @@ def configure(force=False):
         f.truncate()
         f.write(contents)
 
+    #TODO Setting the juju-secret _after_ adding a relation to a target service
+    #     is crashtastic. Fixme.
     if 'juju-secret' not in config:
         return
 
