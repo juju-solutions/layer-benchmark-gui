@@ -83,11 +83,8 @@ def install_benchmark_gui():
 
 
 @hook('config-changed')
-def configure(force=False):
+def configure():
     config = hookenv.config()
-
-    def changed(key):
-        return force or config.changed(key)
 
     if config.changed('proxy') and config.get('proxy'):
         shutil.rmtree('/opt/collector-web')
@@ -134,20 +131,23 @@ def configure(force=False):
         'graphite.url = http://%s:9001' % hookenv.unit_get('public-address'),
         ini)
 
-    if changed('juju-user'):
-        ini = re.sub(
-            r'juju.api.user =.*',
-            'juju.api.user = %s' % config.get('juju-user') or '', ini)
+    ini = re.sub(
+        r'juju.api.user =.*',
+        'juju.api.user = %s' % config.get('juju-user') or '',
+        ini
+    )
 
-    if changed('juju-secret'):
-        ini = re.sub(
-            r'juju.api.secret =.*',
-            'juju.api.secret = %s' % config.get('juju-secret') or '', ini)
+    ini = re.sub(
+        r'juju.api.secret =.*',
+        'juju.api.secret = %s' % config.get('juju-secret') or '',
+        ini
+    )
 
-    if changed('publish-url'):
-        ini = re.sub(
-            r'publish.url =.*',
-            'publish.url = %s' % config.get('publish-url') or '', ini)
+    ini = re.sub(
+        r'publish.url =.*',
+        'publish.url = %s' % config.get('publish-url') or '',
+        ini
+    )
 
     with open(ini_path, 'w') as f:
         f.write(ini)
@@ -251,5 +251,5 @@ def stop():
 def upgrade():
     shutil.rmtree('/opt/collector-web')
     install_benchmark_gui()
-    configure(True)
+    configure()
     start()
