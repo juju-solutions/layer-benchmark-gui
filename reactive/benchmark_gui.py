@@ -18,6 +18,7 @@ from charmhelpers import fetch
 from helpers import apache2
 from helpers.host import touch, extract_tar
 
+#TODO: use reactive states instead of hooks
 #TODO: use templates instead of ./files
 
 @hook('install')
